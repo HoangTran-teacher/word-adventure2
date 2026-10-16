@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Adventure</title>
+<style id="app-css">
+:root{
+  --bg:#FFF4DC; --card:#FFFFFF; --ink:#2B2D42; --muted:#5F6380; --line:#2B2D42;
+  --yellow:#FFD23F; --blue:#3D7FE0; --good:#2E9E5B; --goodbg:#D8F3E2; --bad:#E63950; --badbg:#FFD9DE; --track:#EADFC4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#17172A; --card:#25254A; --ink:#F4F2FF; --muted:#B3B1D4; --line:#7C7CB8; --goodbg:#17402B; --badbg:#4A1F2A; --blue:#5B93F0; --track:#34345E; }
+}
+:root[data-theme="dark"]{ --bg:#17172A; --card:#25254A; --ink:#F4F2FF; --muted:#B3B1D4; --line:#7C7CB8; --goodbg:#17402B; --badbg:#4A1F2A; --blue:#5B93F0; --track:#34345E; }
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:18px;line-height:1.3;min-height:100vh}
+button,input,textarea{font-family:inherit}
+.wrap{max-width:640px;margin:0 auto;padding:14px 14px 40px}
+.btn{font-size:1rem;font-weight:700;color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:18px;padding:10px 16px;cursor:pointer;box-shadow:0 4px 0 var(--line);touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:var(--yellow);color:#2B2D42}
+.btn.big{font-size:1.2rem;padding:14px 20px;width:100%}
+.btn.good{background:var(--goodbg);border-color:var(--good);box-shadow:0 4px 0 var(--good)}
+.btn.bad{background:var(--badbg);border-color:var(--bad);box-shadow:0 4px 0 var(--bad)}
+.panel{background:var(--card);border:3px solid var(--line);border-radius:26px;padding:18px;box-shadow:0 6px 0 var(--line)}
+.center{text-align:center}
+h1,h2{margin:0 0 6px}
+.hint{color:var(--muted);margin:6px 0 12px}
+.top{display:flex;align-items:center;margin-bottom:14px}
+.top>*{margin-right:10px}
+.top>*:last-child{margin-right:0}
+.pill{border:3px solid var(--line);border-radius:999px;padding:3px 12px;background:var(--card);font-weight:700;white-space:nowrap}
+.bar{height:16px;border:3px solid var(--line);border-radius:999px;background:var(--track);overflow:hidden}
+.bar.flex{flex:1}
+.bar i{display:block;height:100%;background:var(--yellow);border-right:3px solid var(--line)}
+.bar i[style*="width:0%"]{border-right:0}
+
+/* home */
+.buddy{font-size:5.2rem;line-height:1.1;display:inline-block;animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.hero h1{font-size:2rem}
+.hero p{margin:0 0 10px;font-weight:700}
+.hero small{color:var(--muted);display:block;margin-top:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;grid-gap:10px;gap:10px;margin:14px 0}
+.sec{margin:20px 0 8px}
+.sec h2{font-size:1.25rem;margin:0}
+.stages{display:grid;grid-gap:10px;gap:10px}
+.stage{font-size:1rem;color:#2B2D42;text-align:left;display:flex;align-items:center;border:3px solid var(--line);border-radius:20px;padding:10px 14px;cursor:pointer;box-shadow:0 4px 0 var(--line);touch-action:manipulation;width:100%}
+.stage:disabled{cursor:default;opacity:.55;box-shadow:none}
+.stage .no{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;margin-right:12px}
+.stage .mid{flex:1;min-width:0}
+.stage b{display:block;font-size:1.1rem}
+.stage .ems{font-size:1.1rem;letter-spacing:2px}
+.stage .rt{font-size:1.1rem;white-space:nowrap;margin-left:10px}
+.stage.next{outline:4px solid var(--blue);outline-offset:2px}
+.foot{text-align:center;margin-top:22px}
+.link{font-size:.95rem;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer;padding:6px}
+
+/* learn */
+.bigem{font-size:5rem;line-height:1.1}
+.wordbig{font-size:2rem;font-weight:700;margin:4px 0}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--track);border:2px solid var(--line);margin:3px}
+.dots i.on{background:var(--yellow)}
+.sline{display:flex;align-items:center;justify-content:space-between;border:3px solid var(--line);border-radius:16px;padding:8px 12px;margin:8px 0;text-align:left;font-weight:700}
+.sline .btn{margin-left:10px}
+
+/* questions */
+.badge{display:inline-block;border:3px solid var(--line);border-radius:999px;padding:2px 14px;font-weight:700;color:#2B2D42;margin-bottom:8px}
+.choices{display:grid;grid-template-columns:1fr 1fr;grid-gap:10px;gap:10px;margin:10px 0 12px}
+.choice{color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:20px;padding:8px 6px;cursor:pointer;box-shadow:0 4px 0 var(--line);min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;touch-action:manipulation;font-size:1rem}
+.choice .em{font-size:3.2rem;line-height:1.1}
+.choice .lb{font-weight:700;font-size:.95rem}
+.choice.txt{font-weight:700;font-size:1.1rem}
+.choice:disabled{cursor:default}
+.choice.good{background:var(--goodbg);border-color:var(--good);box-shadow:0 4px 0 var(--good)}
+.choice.bad{background:var(--badbg);border-color:var(--bad);box-shadow:0 4px 0 var(--bad)}
+.fb{border-radius:16px;padding:8px 14px;margin:8px 0 12px;font-weight:700;color:var(--ink)}
+.fb.good{background:var(--goodbg);border:3px solid var(--good)}
+.fb.bad{background:var(--badbg);border:3px solid var(--bad)}
+.pairs{display:flex;flex-wrap:wrap;justify-content:center}
+.pr{display:flex;flex-direction:column;align-items:center;margin:4px 14px}
+.pr .em2{font-size:3.6rem;line-height:1.1}
+.pr .mk{font-size:1.6rem}
+.slots{min-height:64px;border:3px dashed var(--line);border-radius:16px;padding:6px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;margin:8px 0}
+.pool{display:flex;flex-wrap:wrap;justify-content:center;margin:8px 0 12px}
+.tok{font-weight:700;font-size:1.35rem;color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:12px;padding:6px 14px;cursor:pointer;box-shadow:0 3px 0 var(--line);touch-action:manipulation;margin:4px}
+.tok.ans{background:var(--yellow);color:#2B2D42}
+.cmd{font-size:1.7rem;font-weight:700;margin:6px 0}
+.who{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:6px}
+.who>*{margin:4px 6px}
+.avatar{font-size:3rem;line-height:1}
+.bubble{background:var(--bg);border:3px solid var(--line);border-radius:20px;padding:6px 14px;font-weight:700}
+.row{display:grid;grid-template-columns:1fr 1fr;grid-gap:10px;gap:10px;margin-top:8px}
+.wordtag{display:inline-block;background:var(--bg);border:3px solid var(--line);border-radius:12px;padding:2px 10px;font-weight:700;margin-bottom:6px}
+@media (max-width:420px){.cmd{font-size:1.4rem}.wordbig{font-size:1.7rem}.choice .em{font-size:2.8rem}}
+
+/* book */
+.book{display:grid;grid-template-columns:repeat(3,1fr);grid-gap:10px;gap:10px;margin-top:10px}
+@media (max-width:420px){.book{grid-template-columns:repeat(2,1fr)}}
+.sticker{color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:20px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;cursor:pointer;box-shadow:0 4px 0 var(--line);touch-action:manipulation;font-size:1rem}
+.sticker .em{font-size:2.8rem;line-height:1.1}
+.sticker b{font-size:.95rem;text-align:center}
+.sticker.locked{opacity:.6;border-style:dashed;box-shadow:none;cursor:default}
+.sticker.locked .em{filter:grayscale(1)}
+.booksec{text-align:left;margin:16px 0 0;font-size:1.1rem}
+
+/* modal + results */
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;background:rgba(20,20,40,.58);z-index:50;padding:14px}
+.modal.on{display:flex}
+.mcard{width:100%;max-width:440px;max-height:94vh;overflow:auto;background:var(--card);color:var(--ink);border:3px solid var(--line);border-radius:26px;padding:18px;box-shadow:0 6px 0 var(--line);text-align:center}
+.big{font-size:3.6rem;line-height:1.15}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;margin:10px 0 14px}
+.chip{border:3px solid var(--line);border-radius:999px;padding:2px 12px;font-weight:700;background:var(--bg);margin:4px}
+.stack{display:grid;grid-gap:10px;gap:10px;margin-top:8px}
+.pop{position:fixed;pointer-events:none;z-index:60;font-size:1.6rem}
+
+/* teacher editor */
+.ed label{display:block;font-weight:700;margin:12px 0 4px;text-align:left}
+.ed input[type=text]{width:100%;font-size:1rem;color:var(--ink);background:var(--bg);border:3px solid var(--line);border-radius:14px;padding:8px 12px}
+.ed textarea{width:100%;font-family:Consolas,Menlo,monospace;font-size:.95rem;line-height:1.45;color:var(--ink);background:var(--bg);border:3px solid var(--line);border-radius:14px;padding:10px;min-height:320px;resize:vertical}
+.ed .chk{display:flex;align-items:center;margin:10px 0;font-weight:600;text-align:left}
+.ed .chk input{margin-right:8px;width:20px;height:20px}
+.ed .info{background:var(--bg);border:3px solid var(--line);border-radius:14px;padding:8px 12px;margin:10px 0;text-align:left;font-size:.95rem}
+.ed .info .w{color:var(--bad)}
+.ed details{margin:10px 0;text-align:left}
+.ed summary{cursor:pointer;font-weight:700;padding:6px 0}
+.ed pre{background:var(--bg);border:3px solid var(--line);border-radius:14px;padding:10px;font-size:.9rem;overflow:auto;white-space:pre-wrap;text-align:left;margin:8px 0}
+.emo{display:flex;flex-wrap:wrap;max-height:180px;overflow:auto;border:3px solid var(--line);border-radius:14px;padding:6px;background:var(--bg)}
+.emo button{font-size:1.5rem;background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:8px}
+.emo button:hover{background:var(--track)}
+.msg{font-weight:700;margin:10px 0 0;text-align:left}
+.msg.err{color:var(--bad)}
+@media (prefers-reduced-motion: reduce){.buddy{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="modal" id="modal"></div>
+<script id="deck-data" type="application/json">{"v": 1, "title": "Word Adventure", "source": "# Unit 4 - Months\n🎆 | January\n❤️ | February\n🌬️ | March\n☔ | April\n🌸 | May\n🍦 | June\n🏖️ | July\n🍉 | August\n🎒 | September\n🎃 | October\n🍂 | November\n🎄 | December\nask | When's your birthday? | It's in {w}.\n\n# Unit 5 - I can ...\n🍳 | cook a meal\n✏️ | draw a picture\n🧒➰ | jump rope\n🎤 | sing a song\n🛼 | roller skate\nyesno | Can you {w}? | Yes, I can. | No, I can't. | I can\nask | What can you do? | I can {w}.\n", "showText": false}</script>
+<script id="app-js">
+/* =====================================================================
+   Word Adventure: a solo word game. The word list lives in #deck-data.
+   The teacher edits it inside the page; "Save for everyone" republishes
+   the page with the new list, so students need nothing but the link.
+   ===================================================================== */
+var DEFAULT_SOURCE_NOTE = 'See the teacher editor for the list format.';
+
+/* ---------- small helpers ---------- */
+function $(id){ return document.getElementById(id); }
+var app = $('app');
+var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function sample(a,n){ return shuffle(a).slice(0,n); }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uniq(a){ var o=[]; a.forEach(function(x){ if(o.indexOf(x)<0) o.push(x); }); return o; }
+function hashStr(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))|0; } return (h>>>0).toString(36); }
+function art(s){ return /^[aeiou]/i.test(s) ? 'an' : 'a'; }
+var canSpeak = ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+function say(t){
+  try{
+    if(!canSpeak) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.85; window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+var ac = null;
+function tone(seq){
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    ac = ac || new AC();
+    var t = ac.currentTime;
+    seq.forEach(function(p){
+      var o=ac.createOscillator(), g=ac.createGain();
+      o.type='triangle'; o.frequency.value=p[0];
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.16,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+p[1]);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+p[1]+.02); t+=p[1];
+    });
+  }catch(e){}
+}
+function okS(){ tone([[660,.08],[880,.14]]); }
+function badS(){ tone([[300,.14],[240,.2]]); }
+function burst(emojis, n){
+  if (reduce) return;
+  n = n || 18;
+  for (var i=0;i<n;i++){
+    (function(){
+      var s = document.createElement('span');
+      s.className='pop'; s.textContent = pick(emojis);
+      s.style.left = (30+Math.random()*40)+'vw'; s.style.top = '55vh';
+      document.body.appendChild(s);
+      var dx = (Math.random()-.5)*320, dy = -(120+Math.random()*260), d = 1100+Math.random()*500;
+      void s.offsetWidth;
+      s.style.transition = 'transform '+d+'ms ease-out, opacity '+d+'ms ease-out';
+      s.style.transform = 'translate('+dx+'px,'+dy+'px) rotate('+(Math.random()*360)+'deg)';
+      s.style.opacity = '0';
+      setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, d+120);
+    })();
+  }
+}
+
+/* ---------- deck: parse the teacher's list ---------- */
+function isEmoji(s){ return /[^\x00-\x7F]/.test(s) && !/[A-Za-z0-9]/.test(s); }
+function parseDeck(src){
+  var d = {groups:[], words:[], warnings:[]};
+  var g = null;
+  function warn(n, m){ d.warnings.push('Dòng '+n+': '+m); }
+  function ensure(){ if(!g){ g={name:'Words', words:[], pats:[]}; d.groups.push(g); } return g; }
+  String(src||'').split(/\r?\n/).forEach(function(raw, i){
+    var ln = raw.trim(), n = i+1;
+    if (!ln || ln.indexOf('//') === 0) return;
+    if (ln.charAt(0) === '#'){
+      g = {name: ln.replace(/^#+\s*/,'').trim() || 'Group', words:[], pats:[]};
+      d.groups.push(g); return;
+    }
+    var f = ln.split(/[|｜]/).map(function(s){ return s.trim(); });
+    var k = f[0].toLowerCase();
+    if (k==='ask' || k==='do' || k==='yesno'){
+      if (k==='ask'){
+        if (!f[1] || !f[2]) return warn(n, 'ask cần 2 phần: câu hỏi | câu trả lời');
+        if (!/\{(w|pl|w2)\}/.test(f[2])) return warn(n, 'câu trả lời của ask cần có {w} hoặc {pl}');
+        ensure().pats.push({kind:'ask', q:f[1], a:f[2]});
+      } else if (k==='do'){
+        if (!f[1] || !/\{(w|pl)\}/.test(f[1])) return warn(n, 'do cần có {w} trong câu lệnh');
+        ensure().pats.push({kind:'do', q:f[1]});
+      } else {
+        if (!f[1]) return warn(n, 'yesno cần câu hỏi');
+        ensure().pats.push({kind:'yesno', q:f[1], yes:f[2]||"Yes, I do.", no:f[3]||"No, I don't.", bub:f[4]||'I like'});
+      }
+      return;
+    }
+    var e, w;
+    if (f.length >= 2 && f[0] && f[1]){
+      if (isEmoji(f[0])){ e=f[0]; w=f[1]; }
+      else if (isEmoji(f[1])){ e=f[1]; w=f[0]; }
+      else { e='❓'; w=f[0]; warn(n, 'thiếu emoji cho "'+w+'"'); }
+    } else if (f.length === 1 && f[0]){
+      if (isEmoji(f[0])) return warn(n, 'có emoji nhưng thiếu từ');
+      e='❓'; w=f[0]; warn(n, 'thiếu emoji cho "'+w+'"');
+    } else return warn(n, 'không hiểu dòng này');
+    var parts = w.split('/'), sg = parts[0].trim(), pl = (parts[1]||'').trim();
+    if (!sg) return warn(n, 'từ bị trống');
+    var gg = ensure();
+    var word = {key:(sg+(pl?'/'+pl:'')).toLowerCase(), w:(pl ? sg+' / '+pl : sg), e:e, sg:sg, pl:pl,
+                say:(pl ? sg+'. '+pl+'.' : sg), spell:sg, pats:gg.pats, group:gg};
+    gg.words.push(word); d.words.push(word);
+  });
+  d.groups = d.groups.filter(function(x){ return x.words.length; });
+  var seen = {};
+  d.words.forEach(function(w){
+    if (seen[w.key]) d.warnings.push('Từ bị trùng: "'+w.sg+'"');
+    seen[w.key] = 1;
+  });
+  return d;
+}
+function tpl(s, w, artOverride, w2){
+  return s.replace(/\{w2\}/g, w2 ? w2.sg : '').replace(/\{w\}/g, w.sg).replace(/\{pl\}/g, w.pl).replace(/\{a\}/g, artOverride || art(w.sg));
+}
+function placeholderMarks(a){
+  var out = [], re = /\{(w2|w|pl)\}/g, last = 0, m;
+  while ((m = re.exec(a))){
+    out.push({ph:m[1], neg:/can['’]t|cannot|can not|don['’]t|do not|\bnot\b/i.test(a.slice(last, m.index))});
+    last = m.index + m[0].length;
+  }
+  return out;
+}
+function patValid(p, w){
+  var s = p.q + ' ' + (p.a || '');
+  if (/\{pl\}/.test(s) && !w.pl) return false;
+  if (/\{w2\}/.test(s) && w.group.words.length < 2) return false;
+  return true;
+}
+function patsFor(kind, w){ return w.pats.filter(function(p){ return p.kind===kind && patValid(p, w); }); }
+
+/* ---------- stages (built from the list) ---------- */
+var COLORS = ['#FFD9B8','#C8F0D8','#BFE3FF','#FFF1A8','#FFC9D2','#E3D3FF'];
+function chunk(ws){
+  if (ws.length <= 5) return [ws];
+  var out = [];
+  for (var i=0;i<ws.length;i+=3) out.push(ws.slice(i,i+3));
+  if (out.length > 1 && out[out.length-1].length === 1){ var last = out.pop(); out[out.length-1] = out[out.length-1].concat(last); }
+  return out;
+}
+function kindsOf(pats){ return uniq(pats.map(function(p){ return p.kind; })); }
+function sentenceLines(ws){
+  var lines = [];
+  var pats = ws[0].pats;
+  pats.forEach(function(p){
+    var w = null;
+    for (var i=0;i<ws.length;i++){ if (patValid(p, ws[i])){ w = ws[i]; break; } }
+    if (!w) return;
+    var w2 = null;
+    for (var j=0;j<ws.length;j++){ if (ws[j]!==w){ w2 = ws[j]; break; } }
+    if (!w2) w2 = w.group.words.filter(function(x){ return x!==w; })[0] || w;
+    if (p.kind==='ask'){ lines.push(tpl(p.q,w,null,w2)); lines.push(tpl(p.a,w,null,w2)); }
+    else if (p.kind==='do'){ lines.push(tpl(p.q,w)); }
+    else { lines.push(tpl(p.q,w)); lines.push(tpl(p.yes,w)); lines.push(tpl(p.no,w)); }
+  });
+  return uniq(lines).slice(0,8);
+}
+function buildStages(d){
+  var stages = [], lastIds = [], gi = 0;
+  d.groups.forEach(function(g){
+    var kinds = kindsOf(g.pats);
+    var types = ['listen','match','spell'].concat(kinds);
+    if (g.pats.length) types.push('say');
+    var chunks = chunk(g.words), prev = null;
+    chunks.forEach(function(ws, ci){
+      var id = hashStr(g.name+'|'+ws.map(function(w){return w.key;}).join('|'));
+      stages.push({id:id, part:gi, title:(chunks.length>1 ? g.name+' · '+(ci+1) : g.name), icon:ws[0].e, color:COLORS[gi%COLORS.length],
+        words:ws, intro:true, n:Math.max(6, Math.min(10, ws.length*2+1)), types:types, sentence:sentenceLines(ws), req:(prev?[prev]:[])});
+      prev = id;
+    });
+    if (chunks.length > 1){
+      var bid = hashStr(g.name+'|boss|'+g.words.map(function(w){return w.key;}).join('|'));
+      stages.push({id:bid, part:gi, title:'Boss: '+g.name, icon:'👾', color:COLORS[gi%COLORS.length],
+        words:g.words, intro:false, n:Math.max(8, Math.min(12, g.words.length+2)), types:types, req:[prev]});
+      prev = bid;
+    }
+    lastIds.push(prev); gi++;
+  });
+  if (d.groups.length > 1 || d.words.length > 6){
+    var all = d.words, ak = [];
+    d.groups.forEach(function(g){ ak = ak.concat(kindsOf(g.pats)); });
+    var atypes = ['listen','match','spell','say'].concat(uniq(ak));
+    stages.push({id:hashStr('grand|'+all.map(function(w){return w.key;}).join('|')), part:gi, title:'Grand Final', icon:'🏆', color:'#FFD23F',
+      words:all, intro:false, n:Math.min(16, Math.max(10, Math.round(all.length*0.7))), types:atypes, req:lastIds, grand:true});
+  }
+  return stages;
+}
+function allTypes(d){
+  var ak = [];
+  d.groups.forEach(function(g){ ak = ak.concat(kindsOf(g.pats)); });
+  return ['listen','match','spell','say'].concat(uniq(ak));
+}
+
+/* ---------- load the deck that was published with this page ---------- */
+var DECK;
+try{ DECK = JSON.parse($('deck-data').textContent); }catch(e){ DECK = null; }
+if (!DECK || typeof DECK.source !== 'string') DECK = {v:1, title:'Word Adventure', source:'', showText:false};
+var D = parseDeck(DECK.source);
+var ST = buildStages(D);
+function useDeck(deck){ DECK = deck; D = parseDeck(deck.source); ST = buildStages(D); }
+/* Outside Claude (for example on GitHub Pages) the word list is read from words.txt next to this page. */
+var STANDALONE = !(window.claude && typeof window.claude.use === 'function');
+function applyWordsTxt(text){
+  var title = DECK.title, showText = DECK.showText, lines = [];
+  String(text || '').split(/\r?\n/).forEach(function(ln){
+    var m = ln.trim().match(/^@(\w+)\s*(.*)$/);
+    if (m){
+      var k = m[1].toLowerCase(), v = m[2].trim();
+      if (k === 'title' && v) title = v;
+      else if (k === 'showtext') showText = /^(on|yes|1|true)$/i.test(v);
+    } else lines.push(ln);
+  });
+  var src = lines.join('\n');
+  if (parseDeck(src).words.length < 2) return false;
+  useDeck({v:1, title:title, source:src, showText:showText});
+  return true;
+}
+
+/* ---------- progress (kept on the child's device) ---------- */
+var KEY = 'wordstudio-v1';
+function freshP(){ return {stars:0, mastery:{}, best:{}}; }
+function loadP(){
+  try{
+    var s = JSON.parse(localStorage.getItem(KEY));
+    if (s && typeof s==='object') return {stars:s.stars|0, mastery:s.mastery||{}, best:s.best||{}};
+  }catch(e){}
+  return freshP();
+}
+function saveP(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
+var P = loadP();
+function mast(w){ return P.mastery[w.key] || 0; }
+function cleared(id){ return (P.best[id] || 0) >= 1; }
+function unlocked(i){ return ST[i].req.every(cleared); }
+function lvlOf(w){ var m = mast(w); return m>=5?3 : m>=3?2 : m>=1?1 : 0; }
+function starsStr(n){ return '★'.repeat(n) + '☆'.repeat(3-n); }
+var BUDDY = [
+  {min:0,  e:'🥚', n:'Dragon egg'},
+  {min:6,  e:'🐣', n:'Hatchling'},
+  {min:16, e:'🐲', n:'Baby dragon'},
+  {min:32, e:'🐉', n:'Mighty dragon'},
+  {min:64, e:'👑🐉', n:'Dragon king'}
+];
+function buddyOf(stars){ var b=0; BUDDY.forEach(function(x,i){ if(stars>=x.min) b=i; }); return b; }
+var PRAISE = ['Great!','Super!','Awesome!','Yes!','Well done!','Fantastic!'];
+var TYPE_LABEL = {
+  listen:{t:'🎧 Listen', bg:'#BFE3FF'}, match:{t:'🖼️ What is it?', bg:'#C8F0D8'}, spell:{t:'🔤 Build it', bg:'#E3D3FF'},
+  say:{t:'🎤 Say it', bg:'#FFD9B8'}, ask:{t:'🔍 Question', bg:'#FFE0A3'}, 'do':{t:'🙋 Do it!', bg:'#9CC8FF'}, yesno:{t:'💬 Talk', bg:'#FFC9D2'}
+};
+var KIDS = [{n:'Mai',e:'👧'},{n:'Nam',e:'👦'},{n:'Lan',e:'👩'},{n:'Tom',e:'🧒'}];
+
+/* ---------- screens ---------- */
+var run = null, Q = null, screen = 'home', isTeacher = false;
+function go(html){ app.innerHTML = html; window.scrollTo(0,0); }
+function closeModal(){ var m=$('modal'); m.classList.remove('on'); m.innerHTML=''; }
+function openModal(html){ var m=$('modal'); m.innerHTML = '<div class="mcard">'+html+'</div>'; m.classList.add('on'); }
+
+function home(){
+  screen = 'home'; closeModal(); run = null; Q = null;
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  var b = buddyOf(P.stars), cur = BUDDY[b], nxt = BUDDY[b+1];
+  var pct = nxt ? Math.round((P.stars-cur.min)/(nxt.min-cur.min)*100) : 100;
+  var title = esc(DECK.title || 'Word Adventure');
+  if (D.words.length < 2){
+    go('<div class="panel center"><div class="buddy">🥚</div><h1>'+title+'</h1><p class="hint">No words yet. Ask your teacher to add some!</p>'+
+       (isTeacher ? '<button class="btn primary big" onclick="openEditor()">⚙️ Add words</button>' : '')+'</div>');
+    return;
+  }
+  var nextOne = -1;
+  ST.forEach(function(s,i){ if (nextOne < 0 && unlocked(i) && !cleared(s.id)) nextOne = i; });
+  var html = '', lastPart = -1, n = 0;
+  ST.forEach(function(s,i){
+    if (s.part !== lastPart){
+      if (lastPart !== -1) html += '</div>';
+      var secName = s.grand ? 'Grand Final' : (D.groups[s.part] ? D.groups[s.part].name : '');
+      html += '<div class="sec"><h2>'+esc(secName)+'</h2></div><div class="stages">';
+      lastPart = s.part; n = 0;
+    }
+    n++;
+    var open = unlocked(i), rt = P.best[s.id] || 0, done = cleared(s.id);
+    var status = !open ? '🔒' : (done ? '<span class="rt">'+starsStr(rt)+'</span>' : '▶️');
+    var emo = s.words.length > 7 ? (s.words.length+' words') : s.words.map(function(w){ return w.e; }).join(' ');
+    html += '<button class="stage'+(nextOne===i?' next':'')+'" style="background:'+s.color+'" '+(open?'':'disabled')+' onclick="startStage('+i+')">'+
+      '<span class="no">'+(done ? '✅' : (s.grand ? s.icon : n))+'</span>'+
+      '<span class="mid"><b>'+esc(s.title)+'</b><span class="ems">'+emo+'</span></span>'+status+'</button>';
+  });
+  html += '</div>';
+  go('<div class="panel hero center">'+
+      '<div class="buddy" aria-hidden="true">'+cur.e+'</div>'+
+      '<h1>'+title+'</h1>'+
+      '<p>'+cur.n+' · ⭐ '+P.stars+'</p>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<small>'+(nxt ? ((nxt.min-P.stars)+' more ⭐ and your dragon grows!') : 'Your dragon is fully grown! 🎉')+'</small></div>'+
+    '<div class="two"><button class="btn" onclick="showBook()">📒 Sticker book</button><button class="btn" onclick="startFree()">🎲 Quick practice</button></div>'+
+    html+
+    (isTeacher ? '<div class="foot"><button class="link" onclick="openEditor()">⚙️ Teacher: edit words</button></div>' : ''));
+}
+
+function showBook(){
+  screen = 'book';
+  var learned = D.words.filter(function(w){ return mast(w)>=1; }).length;
+  var secs = D.groups.map(function(g){
+    var cards = g.words.map(function(w){
+      var lvl = lvlOf(w);
+      return mast(w)<1
+        ? '<div class="sticker locked"><span class="em">'+w.e+'</span><b>? ? ?</b><span>☆☆☆</span></div>'
+        : '<button class="sticker" data-say="'+esc(w.say)+'" onclick="say(this.getAttribute(\'data-say\'))"><span class="em">'+w.e+'</span><b>'+esc(w.w)+'</b><span>'+starsStr(lvl)+'</span></button>';
+    }).join('');
+    return '<h2 class="booksec">'+esc(g.name)+'</h2><div class="book">'+cards+'</div>';
+  }).join('');
+  go('<div class="top"><button class="btn" onclick="home()">← Back</button><div class="pill">'+learned+' / '+D.words.length+' words</div></div>'+
+     '<div class="panel center"><h2>Sticker book 📒</h2><p class="hint" style="margin-bottom:0">Tap a sticker to hear the word. Practise more to earn more stars!</p>'+secs+'</div>');
+}
+
+/* ---------- stage flow ---------- */
+function startFree(){
+  var learned = D.words.filter(function(w){ return mast(w)>=1; });
+  var words = learned.length >= 3 ? learned : D.words;
+  run = {i:-1, s:{id:'free', title:'Quick practice', words:words, intro:false, n:10, types:allTypes(D), color:'#FFE680'}};
+  beginPractice();
+}
+function startStage(i){
+  if (!unlocked(i)) return;
+  var s = ST[i];
+  run = {i:i, s:s};
+  if (s.intro){
+    run.cards = s.words.map(function(w){ return {kind:'word', w:w}; });
+    if (s.sentence && s.sentence.length) run.cards.push({kind:'sentence', lines:s.sentence});
+    run.ci = 0;
+    showIntro();
+  } else beginPractice();
+}
+function showIntro(){
+  screen = 'intro';
+  var c = run.cards[run.ci], total = run.cards.length;
+  var dots = run.cards.map(function(_,k){ return '<i class="'+(k<=run.ci?'on':'')+'"></i>'; }).join('');
+  var body;
+  if (c.kind === 'word'){
+    body = '<div class="bigem">'+c.w.e+'</div><div class="wordbig">'+esc(c.w.w)+'</div>'+
+      '<button class="btn" onclick="say(run.cards[run.ci].w.say)">🔊 Hear it</button><p class="hint">Now you say it!</p>';
+  } else {
+    body = '<div class="bigem">💬</div><div class="wordbig">Sentences</div>' +
+      c.lines.map(function(l,k){ return '<div class="sline"><span>'+esc(l)+'</span><button class="btn" onclick="say(run.cards[run.ci].lines['+k+'])" aria-label="Hear it">🔊</button></div>'; }).join('');
+  }
+  go('<div class="top"><button class="btn" onclick="confirmExit()">✕</button><div style="flex:1"><div class="dots">'+dots+'</div></div><div class="pill">'+(run.ci+1)+'/'+total+'</div></div>'+
+    '<div class="panel center"><span class="badge" style="background:'+run.s.color+'">'+esc(run.s.title)+'</span>'+body+
+    '<button class="btn primary big" style="margin-top:12px" onclick="introNext()">'+(run.ci===total-1 ? "Let's play! 🚀" : 'Next →')+'</button></div>');
+  var sp = c.kind==='word' ? c.w.say : c.lines[0];
+  setTimeout(function(){ if (run && run.cards && run.cards[run.ci]===c) say(sp); }, 300);
+}
+function introNext(){
+  if (run.ci < run.cards.length-1){ run.ci++; showIntro(); } else beginPractice();
+}
+function confirmExit(){
+  openModal('<h2>Stop for now?</h2><p class="hint">Stars you earned are kept.</p>'+
+    '<div class="row"><button class="btn" onclick="closeModal()">Keep going</button><button class="btn primary" onclick="home()">Stop</button></div>');
+}
+
+/* ---------- building questions ---------- */
+function validTypes(w, types){
+  return types.filter(function(t){
+    if (t==='ask' || t==='do' || t==='yesno') return patsFor(t, w).length > 0;
+    return true;
+  });
+}
+function buildQueue(s){
+  var words = s.words, count = {};
+  words.forEach(function(w){ count[w.key]=0; });
+  var list = [];
+  while (list.length < s.n){
+    var minC = Math.min.apply(null, words.map(function(w){ return count[w.key]; }));
+    var cand = words.filter(function(w){ return count[w.key]===minC; });
+    var pool = [];
+    cand.forEach(function(w){ for (var k=0;k<Math.max(1,6-mast(w));k++) pool.push(w); });
+    var w = pick(pool);
+    count[w.key]++; list.push(w);
+  }
+  var used = {}, says = 0;
+  var entries = list.map(function(w){
+    var opts = validTypes(w, s.types);
+    if (!opts.length) opts = ['listen'];
+    var seen = used[w.key] || [];
+    var fresh = opts.filter(function(t){ return seen.indexOf(t)<0 && (t!=='say' || says<2); });
+    if (!fresh.length) fresh = opts.filter(function(t){ return t!=='say' || says<2; });
+    if (!fresh.length) fresh = ['listen'];
+    var t = pick(fresh);
+    if (t==='say') says++;
+    (used[w.key] = used[w.key] || []).push(t);
+    return {w:w, type:t};
+  });
+  var best = entries, bestBad = 99;
+  for (var k=0;k<25;k++){
+    var a = shuffle(entries), bad = 0;
+    for (var i=1;i<a.length;i++) if (a[i].w.key===a[i-1].w.key) bad++;
+    if (bad < bestBad){ best = a; bestBad = bad; if (!bad) break; }
+  }
+  return best;
+}
+function poolFor(w){
+  var same = w.group.words.filter(function(x){ return x.key!==w.key; });
+  if (same.length >= 3) return same;
+  var rest = D.words.filter(function(x){ return x.key!==w.key && same.indexOf(x)<0; });
+  return same.concat(sample(rest, 3-same.length));
+}
+function sayCard(w){
+  var opts = [];
+  w.pats.forEach(function(p){ if (patValid(p,w)) opts.push(p); });
+  if (!opts.length) return {text:'Say it: '+w.sg, sub:'Say the word out loud.', speak:w.say};
+  var p = pick(opts);
+  var plural = /\{pl\}/.test((p.a||'')) && !/\{w\}/.test(p.a||'');
+  var em = plural ? w.e+' '+w.e : w.e;
+  if (p.kind==='ask'){
+    var w2 = null, small = false;
+    if (/\{w2\}/.test(p.q+' '+p.a)){
+      w2 = pick(poolFor(w));
+      em = placeholderMarks(p.a).map(function(m){ return (m.ph==='w2' ? w2 : w).e + (m.neg ? '❌' : '✅'); }).join('  ');
+      small = true;
+    }
+    return {em:em, small:small, text:tpl(p.q,w,null,w2), sub:'Answer: '+tpl(p.a,w,null,w2), speak:tpl(p.q,w,null,w2)};
+  }
+  if (p.kind==='do')  return {em:em, text:tpl(p.q,w), sub:'Do the action!', speak:tpl(p.q,w)};
+  return {em:em, text:tpl(p.q,w), sub:'Answer: '+tpl(p.yes,w)+' / '+tpl(p.no,w), speak:tpl(p.q,w)};
+}
+function mk(e){
+  var w = e.w, q = {w:w, type:e.type, retry:!!e.retry, done:false, ok:false, sel:null};
+  var pool = poolFor(w);
+  if (e.type==='listen' || e.type==='match') q.opts = shuffle([w].concat(sample(pool,3)));
+  if (e.type==='spell'){
+    q.words = w.spell.indexOf(' ') >= 0;
+    var parts = q.words ? w.spell.split(/\s+/) : w.spell.split('');
+    q.tokens = parts.map(function(t,i){ return {id:i, t:t}; });
+    var p2 = shuffle(q.tokens), g = 0;
+    while (p2.length>1 && p2.every(function(x,i){ return x.id===i; }) && g++<20) p2 = shuffle(q.tokens);
+    q.pool = p2; q.ans = [];
+  }
+  if (e.type==='do'){
+    var p = pick(patsFor('do', w));
+    q.text = tpl(p.q, w);
+    q.opts = shuffle([w].concat(sample(pool,3)));
+  }
+  if (e.type==='ask'){
+    var pa = pick(patsFor('ask', w));
+    var two = /\{w2\}/.test(pa.q + ' ' + pa.a);
+    var w2 = two ? pick(pool) : null;
+    q.prompt = tpl(pa.q, w, null, w2);
+    q.answer = tpl(pa.a, w, null, w2);
+    q.plural = /\{pl\}/.test(pa.a) && !/\{w\}/.test(pa.a);
+    var opts = [q.answer];
+    if (two){
+      var marks = placeholderMarks(pa.a);
+      q.pair = marks.map(function(m){ return {e:(m.ph==='w2' ? w2 : w).e, neg:m.neg}; });
+      var sym = !marks.some(function(m){ return m.neg; });   // "A and B" reads the same as "B and A"
+      var swapped = tpl(pa.a, w2, null, w);
+      if (!sym && swapped !== q.answer) opts.push(swapped);
+      var all = [w].concat(pool), tries = 0;
+      while (opts.length < 4 && tries++ < 40){
+        var x = pick(all), y = pick(all);
+        if (x === y) continue;
+        if ((x === w && y === w2) || (sym && x === w2 && y === w)) continue;
+        var s3 = tpl(pa.a, x, null, y);
+        if (opts.indexOf(s3) < 0) opts.push(s3);
+      }
+    } else {
+      if (/\{a\}/.test(pa.a)){
+        var wrong = tpl(pa.a, w, art(w.sg)==='an' ? 'a' : 'an');
+        if (wrong !== q.answer) opts.push(wrong);
+      }
+      shuffle(pool).forEach(function(x){
+        if (!patValid(pa, x) || opts.length >= 4) return;
+        var s2 = tpl(pa.a, x);
+        if (opts.indexOf(s2) < 0) opts.push(s2);
+      });
+    }
+    q.sopts = shuffle(opts);
+  }
+  if (e.type==='yesno'){
+    var py = pick(patsFor('yesno', w));
+    var kid = pick(KIDS), yes = Math.random()<.5;
+    var others = w.group.words.filter(function(x){ return x.key!==w.key; });
+    if (others.length < 3) others = others.concat(shuffle(D.words.filter(function(x){ return x.key!==w.key && others.indexOf(x)<0; })).slice(0, 3-others.length));
+    var liked = yes ? shuffle([w].concat(sample(others, 2))) : sample(others, 3);
+    q.kid = kid; q.yes = yes; q.liked = liked; q.text = tpl(py.q, w); q.yesT = tpl(py.yes, w); q.noT = tpl(py.no, w); q.bub = py.bub || 'I like';
+  }
+  if (e.type==='say') q.card = sayCard(w);
+  return q;
+}
+
+/* ---------- practice ---------- */
+function beginPractice(){
+  screen = 'play';
+  run.q = buildQueue(run.s);
+  run.base = run.q.length;
+  run.qi = 0; run.first = 0;
+  run.oldStars = P.stars;
+  Q = mk(run.q[0]);
+  renderQ(true);
+}
+function qShell(body){
+  var total = run.q.length, pct = Math.round(run.qi/total*100);
+  var lab = TYPE_LABEL[Q.type];
+  go('<div class="top"><button class="btn" onclick="confirmExit()" aria-label="Stop">✕</button><div class="bar flex"><i style="width:'+pct+'%"></i></div><div class="pill">⭐ '+run.first+'</div></div>'+
+    '<div class="panel center"><span class="badge" style="background:'+lab.bg+'">'+lab.t+'</span>'+(Q.retry ? '<div class="hint" style="margin:0 0 4px">Try again!</div>' : '')+body+'</div>');
+}
+function fbBlock(ok, line){
+  return '<div class="fb '+(ok?'good':'bad')+'">'+(ok ? pick(PRAISE)+(Q.retry?'':' ⭐ +1') : (Q.retry ? "Let's keep going." : 'Almost!'))+' '+(line||'')+'</div>'+
+    '<button class="btn primary big" onclick="nextQ()">'+(run.qi>=run.q.length-1 ? 'Finish 🏁' : 'Next →')+'</button>';
+}
+function autoSay(text){ var q=Q; setTimeout(function(){ if (Q===q) say(text); }, 300); }
+function showWordText(){ return !!DECK.showText || !canSpeak; }
+function renderQ(speak){
+  var w = Q.w, t = Q.type, btns;
+  if (t==='listen'){
+    btns = Q.opts.map(function(o){
+      var c=''; if (Q.done){ if (o===w) c='good'; else if (o.key===Q.sel) c='bad'; }
+      return '<button class="choice '+c+'" '+(Q.done?'disabled':'')+' onclick="ansPick(\''+o.key.replace(/'/g,"\\'")+'\')" aria-label="'+esc(o.sg)+'"><span class="em">'+o.e+'</span></button>';
+    }).join('');
+    qShell((showWordText() ? '<div class="wordtag">'+esc(w.w)+'</div><br>' : '')+
+      '<button class="btn" onclick="say(Q.w.say)">🔊 Listen again</button><p class="hint">Which picture is it?</p><div class="choices">'+btns+'</div>'+
+      (Q.done ? fbBlock(Q.ok, w.e+' '+esc(w.w)) : ''));
+    if (speak) autoSay(w.say);
+  }
+  else if (t==='match'){
+    btns = Q.opts.map(function(o){
+      var c=''; if (Q.done){ if (o===w) c='good'; else if (o.key===Q.sel) c='bad'; }
+      return '<button class="choice txt '+c+'" '+(Q.done?'disabled':'')+' onclick="ansPick(\''+o.key.replace(/'/g,"\\'")+'\')">'+esc(o.w)+'</button>';
+    }).join('');
+    qShell('<div class="bigem">'+w.e+'</div><p class="hint">What is it?</p><div class="choices">'+btns+'</div>'+(Q.done ? fbBlock(Q.ok, w.e+' '+esc(w.w)) : ''));
+  }
+  else if (t==='spell'){
+    var ans = Q.ans.map(function(x,i){ return '<button class="tok ans" '+(Q.done?'disabled':'')+' onclick="spellBack('+i+')">'+esc(x.t)+'</button>'; }).join('');
+    var pool = Q.pool.map(function(x){ return '<button class="tok" onclick="spellAdd('+x.id+')">'+esc(x.t)+'</button>'; }).join('');
+    qShell('<div class="bigem">'+w.e+'</div><p class="hint">'+(Q.words ? 'Put the words in order.' : 'Tap the letters to spell it.')+'</p>'+
+      '<div class="slots">'+(ans || '<span class="hint" style="margin:0">...</span>')+'</div>'+
+      (Q.done ? '' : '<div class="pool">'+pool+'</div>')+(Q.done ? fbBlock(Q.ok, '<b>'+esc(w.spell)+'</b>') : ''));
+  }
+  else if (t==='do'){
+    btns = Q.opts.map(function(o){
+      var c=''; if (Q.done){ if (o===w) c='good'; else if (o.key===Q.sel) c='bad'; }
+      return '<button class="choice '+c+'" '+(Q.done?'disabled':'')+' onclick="ansPick(\''+o.key.replace(/'/g,"\\'")+'\')"><span class="em">'+o.e+'</span><span class="lb">'+esc(o.sg)+'</span></button>';
+    }).join('');
+    qShell('<div class="cmd">'+esc(Q.text)+'</div><button class="btn" onclick="say(Q.text)">🔊 Listen again</button>'+
+      '<p class="hint">Tap the right picture!</p><div class="choices">'+btns+'</div>'+(Q.done ? fbBlock(Q.ok, w.e+' '+esc(Q.text)) : ''));
+    if (speak) autoSay(Q.text);
+  }
+  else if (t==='ask'){
+    btns = Q.sopts.map(function(s,i){
+      var c=''; if (Q.done){ if (s===Q.answer) c='good'; else if (i===Q.sel) c='bad'; }
+      return '<button class="choice txt '+c+'" '+(Q.done?'disabled':'')+' onclick="ansSent('+i+')">'+esc(s)+'</button>';
+    }).join('');
+    qShell((Q.pair
+        ? '<div class="pairs">'+Q.pair.map(function(x){ return '<span class="pr"><span class="em2">'+x.e+'</span><span class="mk">'+(x.neg ? '❌' : '✅')+'</span></span>'; }).join('')+'</div>'
+        : '<div class="bigem">'+(Q.plural ? w.e+' '+w.e : w.e)+'</div>')+
+      '<div class="cmd">'+esc(Q.prompt)+'</div><button class="btn" onclick="say(Q.prompt)">🔊 Listen</button>'+
+      '<p class="hint">'+(Q.pair ? 'Pick the right sentence! ✅ can · ❌ can\'t' : 'Pick the right answer!')+'</p><div class="choices">'+btns+'</div>'+(Q.done ? fbBlock(Q.ok, '<b>'+esc(Q.answer)+'</b>') : ''));
+    if (speak) autoSay(Q.prompt);
+  }
+  else if (t==='yesno'){
+    var yc = Q.done ? (Q.yes?'good':(Q.sel===true?'bad':'')) : '';
+    var nc = Q.done ? (!Q.yes?'good':(Q.sel===false?'bad':'')) : '';
+    qShell('<div class="who"><span class="avatar">'+Q.kid.e+'</span><div class="bubble">I\'m '+Q.kid.n+'. '+esc(Q.bub)+' '+Q.liked.map(function(x){ return x.e; }).join(' ')+'</div></div>'+
+      '<p class="hint" style="margin:4px 0 8px">Answer as '+Q.kid.n+'!</p>'+
+      '<div class="cmd">'+w.e+' '+esc(Q.text)+'</div><button class="btn" onclick="say(Q.text)">🔊 Listen</button>'+
+      '<div class="row" style="margin-top:12px"><button class="btn '+yc+'" '+(Q.done?'disabled':'')+' onclick="ansYes(true)">'+esc(Q.yesT)+'</button><button class="btn '+nc+'" '+(Q.done?'disabled':'')+' onclick="ansYes(false)">'+esc(Q.noT)+'</button></div>'+
+      (Q.done ? fbBlock(Q.ok, Q.kid.n+': <b>'+esc(Q.yes ? Q.yesT : Q.noT)+'</b>') : ''));
+    if (speak) autoSay(Q.text);
+  }
+  else if (t==='say'){
+    var c2 = Q.card;
+    qShell('<div class="bigem"'+(c2.small ? ' style="font-size:3rem"' : '')+'>'+(c2.em || w.e)+'</div><div class="wordtag">'+esc(w.w)+'</div>'+
+      '<div class="cmd">'+esc(c2.text)+'</div><p class="hint" style="margin:0 0 10px">'+esc(c2.sub)+'</p>'+
+      '<button class="btn" onclick="say(Q.card.speak)">🔊 Listen</button>'+
+      '<p class="hint">Teacher: did the child say it or do it?</p>'+
+      '<div class="row"><button class="btn good" onclick="judge(true)">✅ Yes!</button><button class="btn bad" onclick="judge(false)">❌ Not yet</button></div>');
+    if (speak) autoSay(c2.speak);
+  }
+}
+
+/* ---------- answers ---------- */
+function record(ok){
+  Q.ok = ok; Q.done = true;
+  if (ok) okS(); else badS();
+  if (Q.retry) return;
+  var k = Q.w.key;
+  if (ok){
+    run.first++; P.stars++;
+    P.mastery[k] = Math.min(5, (P.mastery[k]||0)+1);
+  } else {
+    P.mastery[k] = Math.max(0, (P.mastery[k]||0)-1);
+    var others = validTypes(Q.w, run.s.types).filter(function(t){ return t!==Q.type && t!=='say'; });
+    run.q.push({w:Q.w, type:(others.indexOf('match')>=0 ? 'match' : (others.length ? pick(others) : 'listen')), retry:true});
+  }
+  saveP();
+}
+function ansPick(key){
+  if (Q.done) return;
+  Q.sel = key; record(key === Q.w.key);
+  if (Q.ok){ say(Q.w.say); burst(['⭐'], 5); }
+  renderQ(false);
+}
+function ansYes(v){
+  if (Q.done) return;
+  Q.sel = v; record(v === Q.yes);
+  if (Q.ok) burst(['⭐'], 5);
+  renderQ(false);
+}
+function ansSent(i){
+  if (Q.done) return;
+  Q.sel = i; record(Q.sopts[i] === Q.answer);
+  if (Q.ok){ say(Q.answer); burst(['⭐'], 5); }
+  renderQ(false);
+}
+function spellAdd(id){
+  if (Q.done) return;
+  var k = -1;
+  for (var i=0;i<Q.pool.length;i++){ if (Q.pool[i].id===id){ k=i; break; } }
+  if (k<0) return;
+  Q.ans.push(Q.pool.splice(k,1)[0]);
+  if (!Q.pool.length){
+    var joined = Q.ans.map(function(x){ return x.t; }).join(Q.words ? ' ' : '');
+    record(joined === Q.w.spell.split(/\s+/).join(Q.words ? ' ' : ''));
+    say(Q.w.say);
+    if (Q.ok) burst(['⭐'], 5);
+  } else tone([[520,.04]]);
+  renderQ(false);
+}
+function spellBack(i){
+  if (Q.done) return;
+  Q.pool.push(Q.ans.splice(i,1)[0]);
+  renderQ(false);
+}
+function judge(ok){
+  if (Q.done) return;
+  record(ok);
+  if (ok) burst(['⭐'], 8);
+  nextQ();
+}
+function nextQ(){
+  run.qi++;
+  if (run.qi >= run.q.length) return finishStage();
+  Q = mk(run.q[run.qi]);
+  renderQ(true);
+}
+
+/* ---------- results ---------- */
+function finishStage(){
+  screen = 'result';
+  var acc = run.first / run.base;
+  var rating = acc>=.9 ? 3 : acc>=.7 ? 2 : acc>=.5 ? 1 : 0;
+  if (run.i >= 0){
+    P.best[run.s.id] = Math.max(P.best[run.s.id]||0, rating);
+    saveP();
+  }
+  var oldB = buddyOf(run.oldStars), newB = buddyOf(P.stars);
+  var msg = rating===3 ? 'Perfect run!' : rating===2 ? 'Great job!' : rating===1 ? 'Good work!' : "Let's try once more!";
+  var chips = run.s.words.length <= 7
+    ? run.s.words.map(function(w){ return '<span class="chip">'+w.e+' '+(('★'.repeat(lvlOf(w))) || '·')+'</span>'; }).join('')
+    : '';
+  var nextIdx = -1;
+  if (run.i >= 0 && rating >= 1){
+    var j = run.i+1;
+    if (ST[j] && ST[j].part === run.s.part && unlocked(j)) nextIdx = j;
+  }
+  var partDone = run.i >= 0 && rating >= 1 && nextIdx < 0;
+  var buddy = BUDDY[newB];
+  var starsBig = rating ? starsStr(rating).replace(/★/g,'⭐').replace(/☆/g,'▫️') : '💪';
+  var again = run.i>=0 ? 'startStage('+run.i+')' : 'startFree()';
+  go('<div class="panel center">'+
+      '<div class="big">'+starsBig+'</div><h2>'+msg+'</h2>'+
+      '<p class="hint" style="margin-bottom:4px">'+run.first+' / '+run.base+' right the first time</p>'+
+      '<div class="buddy" style="font-size:4rem" aria-hidden="true">'+buddy.e+'</div>'+
+      '<p style="margin:0 0 4px;font-weight:700">'+buddy.n+' · ⭐ '+P.stars+'</p>'+
+      (chips ? '<div class="chips">'+chips+'</div>' : '')+
+      (partDone ? '<p class="hint">You finished '+esc(run.s.grand ? 'the whole adventure' : (D.groups[run.s.part] ? D.groups[run.s.part].name : 'this part'))+'! 🎉</p>' : '')+
+      '<div class="stack">'+
+        (nextIdx>=0 ? '<button class="btn primary big" onclick="startStage('+nextIdx+')">Next stage →</button>' : '')+
+        '<button class="btn '+(nextIdx>=0?'':'primary')+' big" onclick="'+again+'">Play again</button>'+
+        '<button class="btn big" onclick="home()">Home</button>'+
+      '</div></div>');
+  if (rating >= 1){ tone([[523,.1],[659,.1],[784,.1],[1047,.25]]); burst(['⭐','🎉','✨','🌟'], 22); }
+  if (newB > oldB){
+    setTimeout(function(){
+      openModal('<div class="big">🎉</div><h2>Your dragon grew!</h2><div class="buddy" style="font-size:5rem" aria-hidden="true">'+buddy.e+'</div>'+
+        '<p style="font-weight:700;margin:6px 0 12px">'+buddy.n+'</p><button class="btn primary big" onclick="closeModal()">Awesome!</button>');
+      burst(['🔥','⭐','🎉','✨'], 26);
+    }, 700);
+  }
+}
+
+/* =====================================================================
+   Teacher editor (Vietnamese). Only shown to people who can edit the page.
+   ===================================================================== */
+var EMOJI = '🦵 🦶 ✋ 🖐️ 👂 👃 👄 👁️ 👀 💇 🧠 🦷 👅 👶 😊 😀 😢 😡 😴 🤒 🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🦆 🦉 🐴 🦄 🐝 🦋 🐢 🐍 🐟 🐬 🐳 🐘 🦒 🍎 🍌 🍇 🍓 🍊 🍉 🍍 🥕 🌽 🍞 🧀 🥚 🍳 🍕 🍔 🍟 🍦 🎂 🍪 🍫 🥛 🧃 🍚 🍜 📖 📚 ✏️ 🖍️ 📏 🎒 🏫 🔔 🔢 🏊 🚴 🏃 💃 🎨 🎤 🎸 🎹 📷 🎬 🎮 ⚽ 🏀 🎾 🏓 ⛸️ 🧗 🏠 🚗 🚌 🚲 ✈️ 🚀 ⏰ 📱 💡 🧸 🎁 🪁 🌞 🌙 ⭐ ☁️ 🌧️ 🌈 🌸 🌳 🍂 👕 👖 👟 🧢 🧤 🧦 👗 🎩'.split(' ');
+var EXAMPLE = "# Unit 4 - Months\n🎆 | January\n❤️ | February\n🌬️ | March\n☔ | April\n🌸 | May\n🍦 | June\n🏖️ | July\n🍉 | August\n🎒 | September\n🎃 | October\n🍂 | November\n🎄 | December\nask | When's your birthday? | It's in {w}.\n\n# Unit 5 - I can ...\n🍳 | cook a meal\n✏️ | draw a picture\n🧒➰ | jump rope\n🎤 | sing a song\n🛼 | roller skate\nyesno | Can you {w}? | Yes, I can. | No, I can't. | I can\nask | What can you do? | I can {w}.\n";
+function openEditor(){
+  screen = 'editor'; closeModal();
+  var src = DECK.source;
+  try{ var dr = JSON.parse(localStorage.getItem('wordstudio-draft')); if (dr && typeof dr.source==='string' && dr.unsaved) { src = dr.source; } }catch(e){}
+  go('<div class="top"><button class="btn" onclick="home()">← Quay lại</button><div class="pill">⚙️ Giáo viên</div></div>'+
+    '<div class="panel ed">'+
+      '<h2>Bộ từ vựng</h2>'+
+      (STANDALONE
+      ? '<p class="hint" style="margin:0">Sửa danh sách bên dưới, bấm <b>Sao chép cho words.txt</b>, rồi dán vào file <b>words.txt</b> trên GitHub (nút bút chì) và bấm Commit. Học sinh chỉ cần mở lại link.</p>'
+      : '<p class="hint" style="margin:0">Sửa danh sách bên dưới rồi bấm <b>Lưu cho mọi người</b>. Học sinh chỉ cần mở lại link, không cần tải gì.</p>')+
+      '<label for="ed-title">Tên trò chơi</label>'+
+      '<input type="text" id="ed-title" maxlength="40" value="'+esc(DECK.title||'Word Adventure')+'">'+
+      '<label for="ed-src">Danh sách từ</label>'+
+      '<textarea id="ed-src" spellcheck="false" oninput="edInfo()">'+esc(src)+'</textarea>'+
+      '<div class="chk"><input type="checkbox" id="ed-show" '+(DECK.showText?'checked':'')+'><span>Hiện chữ ở câu Listen (khi bé không nghe được âm thanh)</span></div>'+
+      '<div class="info" id="ed-info"></div>'+
+      '<details><summary>📝 Cách viết danh sách</summary>'+
+        '<p>Mỗi dòng là một từ: <b>emoji | từ</b>. Dùng <b># Tên nhóm</b> để chia nhóm (mỗi nhóm thành một mục trong game). Từ có số nhiều thì viết <b>foot / feet</b>.</p>'+
+        '<pre># Unit 4 - Body\n🦵 | leg\n🦶 | foot / feet\n👃 | nose\nask | What\'s this? | It\'s {a} {w}.\nask | What are these? | They\'re {pl}.\ndo | Touch your {w}!\n\n# Unit 5 - Hobbies\n🏊 | swimming\n🎨 | painting\nyesno | Can you {w}? | Yes, I can. | No, I can\'t. | I can</pre>'+
+        '<p><b>Mẫu câu</b> (viết ngay dưới các từ của nhóm đó, áp dụng cho cả nhóm):</p>'+
+        '<p>• <b>ask | câu hỏi | câu trả lời</b>: bé nhìn hình rồi chọn câu trả lời đúng. <b>{w}</b> là từ, <b>{pl}</b> là số nhiều, <b>{a}</b> tự thành a/an.</p>'+
+        '<p>• <b>{w2}</b> là một từ thứ hai trong cùng nhóm, dùng cho câu hai hoạt động. Ví dụ <b>ask | What can you do? | I can {w}, but I can\'t {w2}.</b> Game tự hiện hai hình kèm ✅ (làm được) và ❌ (không làm được).</p>'+
+        '<p>• <b>do | câu lệnh</b>: bé nghe lệnh rồi chọn đúng hình, ví dụ <b>Touch your {w}!</b></p>'+
+        '<p>• <b>yesno | câu hỏi | Yes | No | chữ trong bong bóng</b>: bé trả lời Yes/No theo nhân vật. Ví dụ <b>yesno | Can you {w}? | Yes, I can. | No, I can\'t. | I can</b> (phần cuối không bắt buộc, mặc định là I like).</p>'+
+        '<p>Dòng bắt đầu bằng // là ghi chú, không tính. Nhóm không có mẫu câu vẫn chơi bình thường (nghe, chọn hình, ghép chữ).</p>'+
+      '</details>'+
+      '<details><summary>😀 Bảng emoji (bấm để chèn)</summary><div class="emo" id="ed-emo"></div></details>'+
+      '<div class="stack">'+
+        (STANDALONE ? '<button class="btn primary big" onclick="copyList()">📋 Sao chép cho words.txt</button>' : '<button class="btn primary big" id="ed-save" onclick="saveDeck()">💾 Lưu cho mọi người</button>')+
+        '<button class="btn big" onclick="testDeck()">▶️ Chơi thử (chưa lưu)</button>'+
+        (STANDALONE ? '<button class="btn" onclick="useExample()">Dùng mẫu</button>' : '<div class="row"><button class="btn" onclick="copyList()">📋 Sao chép danh sách</button><button class="btn" onclick="useExample()">Dùng mẫu</button></div>')+
+      '</div>'+
+      '<p class="msg" id="ed-msg"></p>'+
+      '<div class="foot"><button class="link" onclick="confirmReset()">Xóa tiến độ chơi trên thiết bị này</button></div>'+
+    '</div>');
+  var emo = $('ed-emo');
+  emo.innerHTML = EMOJI.map(function(e){ return '<button type="button" data-e="'+e+'" onclick="insEmoji(this.getAttribute(\'data-e\'))">'+e+'</button>'; }).join('');
+  edInfo();
+}
+function curDeck(){
+  return {v:1, title:($('ed-title').value.trim() || 'Word Adventure'), source:$('ed-src').value, showText:$('ed-show').checked};
+}
+function edInfo(){
+  var d = parseDeck($('ed-src').value), st = buildStages(d);
+  var html = '<b>'+d.words.length+' từ</b> · '+d.groups.length+' nhóm · '+st.length+' màn chơi';
+  if (d.words.length < 2) html += '<br><span class="w">Cần ít nhất 2 từ để chơi.</span>';
+  else if (d.words.length < 4) html += '<br><span class="w">Nên có từ 4 từ trở lên để câu hỏi có đủ lựa chọn.</span>';
+  d.warnings.slice(0,6).forEach(function(w){ html += '<br><span class="w">⚠️ '+esc(w)+'</span>'; });
+  if (d.warnings.length > 6) html += '<br><span class="w">... và '+(d.warnings.length-6)+' cảnh báo khác</span>';
+  $('ed-info').innerHTML = html;
+  try{ localStorage.setItem('wordstudio-draft', JSON.stringify({source:$('ed-src').value, unsaved:true})); }catch(e){}
+}
+function insEmoji(e){
+  var ta = $('ed-src'); ta.focus();
+  var s = ta.selectionStart, t = ta.selectionEnd;
+  if (typeof s !== 'number'){ ta.value += e; }
+  else { ta.value = ta.value.slice(0,s) + e + ta.value.slice(t); ta.selectionStart = ta.selectionEnd = s + e.length; }
+  edInfo();
+}
+function msg(t, err){ var m=$('ed-msg'); if(m){ m.textContent=t; m.className='msg'+(err?' err':''); } }
+function useExample(){ $('ed-src').value = EXAMPLE; edInfo(); msg('Đã điền danh sách mẫu. Bạn có thể sửa rồi lưu.'); }
+function testDeck(){
+  var deck = curDeck(), d = parseDeck(deck.source);
+  if (d.words.length < 2){ msg('Cần ít nhất 2 từ để chơi thử.', true); return; }
+  useDeck(deck); run = null; home();
+  var top = app.firstChild;
+  var note = document.createElement('div');
+  note.className = 'panel center'; note.style.marginBottom = '12px';
+  note.innerHTML = '<b>Đang chơi thử.</b> Bộ từ này chưa được lưu cho học sinh.<br><button class="btn" style="margin-top:8px" onclick="openEditor()">⚙️ Quay lại sửa</button>';
+  app.insertBefore(note, top);
+}
+function buildWordsTxt(){
+  var d = curDeck();
+  return '@title '+d.title+'\n@showtext '+(d.showText ? 'on' : 'off')+'\n\n'+d.source.replace(/\s+$/,'')+'\n';
+}
+function copyList(){
+  if (STANDALONE){
+    var text = buildWordsTxt();
+    var tmp = document.createElement('textarea');
+    tmp.value = text; tmp.style.position = 'fixed'; tmp.style.top = '0'; tmp.style.opacity = '0';
+    document.body.appendChild(tmp); tmp.focus(); tmp.select();
+    var ok2 = false;
+    try{ ok2 = document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(tmp);
+    if (ok2){ msg('Đã sao chép! Giờ dán vào file words.txt trên GitHub rồi bấm Commit.'); }
+    else {
+      openModal('<h2>Sao chép thủ công</h2><p class="hint">Chọn hết nội dung dưới đây, sao chép rồi dán vào words.txt.</p>'+
+        '<textarea id="manual-copy" readonly style="width:100%;min-height:220px;font-family:Consolas,Menlo,monospace;font-size:.9rem;border:3px solid var(--line);border-radius:14px;padding:8px;background:var(--bg);color:var(--ink)"></textarea>'+
+        '<button class="btn primary big" style="margin-top:10px" onclick="closeModal()">Xong</button>');
+      var mc = $('manual-copy'); mc.value = text; mc.focus(); mc.select();
+    }
+    return;
+  }
+  var ta = $('ed-src'); ta.focus(); ta.select();
+  var ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){}
+  msg(ok ? 'Đã sao chép danh sách.' : 'Hãy bấm giữ để chọn và sao chép danh sách trong ô.');
+}
+function confirmReset(){
+  openModal('<h2>Xóa tiến độ?</h2><p class="hint">Sao, rồng và sticker trên thiết bị này sẽ bị xóa.</p>'+
+    '<div class="row"><button class="btn" onclick="closeModal()">Hủy</button><button class="btn primary" onclick="doReset()">Xóa</button></div>');
+}
+function doReset(){ P = freshP(); saveP(); closeModal(); home(); }
+
+function buildHtml(deck){
+  var css = $('app-css').textContent, js = $('app-js').textContent;
+  var json = JSON.stringify(deck).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'+
+    '<title>'+esc(deck.title)+'</title>\n<style id="app-css">'+css+'</style>\n</head>\n<body>\n'+
+    '<div class="wrap" id="app"></div>\n<div class="modal" id="modal"></div>\n'+
+    '<script id="deck-data" type="application/json">'+json+'<\/script>\n'+
+    '<script id="app-js">'+js+'<\/script>\n</body>\n</html>';
+}
+function saveDeck(){
+  var deck = curDeck(), d = parseDeck(deck.source);
+  if (d.words.length < 2){ msg('Cần ít nhất 2 từ trước khi lưu.', true); return; }
+  var btn = $('ed-save'); btn.disabled = true;
+  msg('Đang lưu...');
+  try{ localStorage.setItem('wordstudio-draft', JSON.stringify({source:deck.source, unsaved:true})); }catch(e){}
+  var html = buildHtml(deck);
+  var p;
+  try{
+    p = (window.claude && typeof window.claude.use==='function') ? window.claude.use('artifact') : Promise.resolve(null);
+  }catch(e){ p = Promise.resolve(null); }
+  p.then(function(a){
+    if (!a || typeof a.publish !== 'function') throw {code:'unavailable'};
+    return a.publish(html);
+  }).then(function(){
+    try{ localStorage.setItem('wordstudio-draft', JSON.stringify({source:deck.source, unsaved:false})); }catch(e){}
+    msg('Đã lưu! Trang sẽ tự tải lại với bộ từ mới.');
+  }).catch(function(err){
+    btn.disabled = false;
+    var c = err && err.code;
+    if (c==='conflict') msg('Trang vừa được cập nhật ở nơi khác. Hãy tải lại trang rồi lưu lại.', true);
+    else if (c==='not_writer' || c==='not_granted' || c==='consent_required') msg('Tài khoản này không có quyền sửa trang. Hãy mở trang bằng tài khoản Claude của bạn (chủ trang).', true);
+    else if (c==='unavailable' || c==='capability_disabled' || c==='not_declared') msg('Chỉ lưu được khi mở trang bằng link Claude của bạn. Bạn vẫn có thể bấm "Sao chép danh sách" và gửi cho mình để cập nhật.', true);
+    else if (c==='too_large') msg('Danh sách quá dài. Hãy bớt vài từ.', true);
+    else if (c==='rate_limited') msg('Lưu quá nhanh, hãy đợi vài giây rồi thử lại.', true);
+    else msg('Chưa lưu được. Hãy thử lại sau ít giây.', true);
+  });
+}
+
+/* ---------- is this person the teacher? ---------- */
+function initTeacher(){
+  try{
+    if (location.hash === '#teacher') isTeacher = true;
+    if (window.claude && typeof window.claude.use === 'function'){
+      window.claude.use('user').then(function(u){
+        if (u && typeof u.canEdit === 'function') return u.canEdit();
+        return false;
+      }).then(function(can){
+        if (can){ isTeacher = true; if (screen === 'home') home(); }
+      }).catch(function(){});
+    }
+  }catch(e){}
+  if (isTeacher && screen === 'home') home();
+}
+
+function boot(){
+  if (STANDALONE && window.fetch){
+    app.innerHTML = '<div class="panel center"><div class="buddy">🥚</div><p class="hint">Loading...</p></div>';
+    var done = false;
+    var fin = function(){ if (done) return; done = true; home(); initTeacher(); };
+    setTimeout(fin, 2000);
+    try{
+      fetch('words.txt?v=' + Date.now(), {cache:'no-store'}).then(function(r){
+        if (!r.ok) throw new Error('no words.txt');
+        return r.text();
+      }).then(function(t){ if (!done) applyWordsTxt(t); fin(); }).catch(fin);
+    }catch(e){ fin(); }
+  } else { home(); initTeacher(); }
+}
+boot();
+</script>
+</body>
+</html>
