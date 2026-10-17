@@ -1,0 +1,24 @@
+@title Word Adventure
+@showtext off
+
+# Rr /r/
+tip | Rr says /r/ as in rabbit.
+🌈 | rainbow
+🏞️ | river
+🛣️ | road
+🐰 | rabbit
+🌹 | rose
+🤖 | robot
+ask | What can you see? | I can see {a} {w}.
+
+# Qq /kw/
+tip | Qq says /kw/ as in queen.
+❓ | question | answering
+🟦 | square | colouring
+📝 | quiz | doing
+👸 | queen
+🛏️ | quilt
+🤫 | quiet | -
+ask | What can you see? | I can see {a} {w}.
+do | He's {v} {a} {w}.
+do | She's {v} {a} {w}.
