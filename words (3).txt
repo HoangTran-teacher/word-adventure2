@@ -1,0 +1,26 @@
+@title Word Adventure
+@showtext off
+
+# Unit 4 - Food
+🍟 | chips
+🍇 | grapes
+🍯 | jam
+🍪 | biscuits
+ask | What do you want to eat? | I want some {w}.
+yesno | Do you want some {w}? | Yes, I want some {w}. | No, I don't want any {w}. | I want
+
+# Unit 4 - Drinks
+🍊 | juice
+🍋 | lemonade
+💧 | water
+ask | What do you want to drink? | I want some {w}.
+yesno | Do you want some {w}? | Yes, I want some {w}. | No, I don't want any {w}. | I want
+
+# Unit 5 - Can he / she
+tip | Play + the + musical instrument: play the guitar, play the piano.
+🚴 | ride a bike
+🐎 | ride a horse
+🏸 | play badminton
+🎸 | play the guitar
+🎹 | play the piano
+yesno | Can {he} {w}? | Yes, {he} can. | No, {he} can't. | {name} can
